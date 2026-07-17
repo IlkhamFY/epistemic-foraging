@@ -15,10 +15,23 @@ Agents and researchers doing literature review all fail the same way: discovery 
 
 - **Source discovery** — query allowlisted scholarly APIs (OpenAlex, Crossref, arXiv, Semantic Scholar), then *snowball*: walk citations forward and backward from what you've already found, with deduplication across connectors.
 - **Foraging, not just searching** — you register *open questions*; the `frontier` command ranks unread sources by a weighted, explainable combination of relevance, novelty, and citation centrality, minus reading cost — and tells you when a "patch" (a query or citation neighborhood) is exhausted and it's time to move on.
-- **Evidence tracking** — evidence is a verbatim quote + locator + retrieval timestamp + content hash, verified against a locally cached copy of the source. Every pin carries an honest verification tier: full-text-verified, abstract-verified, or unverified-locator when no text could be cached (common for paywalled sources — briefs say so instead of hiding it). Claims link to evidence with an explicit stance (supports / contradicts / mentions). No pin, no claim.
+- **Evidence tracking** — evidence is a verbatim quote + locator + retrieval timestamp + content hash, verified against a locally cached copy of the source. Every pin carries an honest verification tier: verified-full-text, verified-abstract, or unverified-locator when no text could be cached (common for paywalled sources — briefs say so instead of hiding it). Claims link to evidence with an explicit stance (supports / contradicts / mentions). No pin, no claim.
 - **Uncertainty-aware synthesis** — `brief` compiles your claims into a Markdown report where every claim is annotated with confidence, source count, source independence, and contestation. `audit` flags unsupported claims, single-source claims, contested pairs, stale or degraded evidence, and orphaned pins.
 - **Agent-native** — the full loop is exposed as MCP tools, so Claude, or any MCP-capable agent, can run it end to end: ask → search → snowball → fetch → read → pin → claim → brief → audit, including resuming an existing workspace in a fresh session.
 - **Local-first and auditable** — one workspace directory: SQLite store, Markdown notes you own, cached source text, and a hash-chained, append-only JSONL ledger recording every mutation (by whom — human or agent — and when), verifiable with `forage log --verify`.
+
+## Get your agent foraging in 60 seconds
+
+The MCP server is the front door, and adoption friction is a design requirement, not an afterthought — no config file, no account, no setup script:
+
+```console
+$ claude mcp add forage -- uvx foragekit serve --mcp     # Claude Code, one line
+$ uvx foragekit serve --mcp                              # any other MCP client
+```
+
+The workspace auto-initializes on the first tool call, so "install" and "first useful result" happen in the same minute. The repo ships a drop-in skill file — [`agents/SKILL.md`](agents/SKILL.md) — that teaches any agent to run the loop well; paste it into your agent's instructions or install it as a Claude Code skill.
+
+And the output closes the loop: every compiled brief is a self-contained Markdown artifact — provenance footnotes inline, verification tiers visible, readable with no workspace — with a one-line footer (`foraged with foragekit · 17 claims, every one pinned`, removable via `--no-badge`). A brief you share is a brief that shows its receipts, and the receipts are the pitch.
 
 ## What it will never do
 

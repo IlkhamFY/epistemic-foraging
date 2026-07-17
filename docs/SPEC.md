@@ -25,7 +25,7 @@ is the audit log; notes are plain Markdown owned by the user.
 | **Question** | `id`, `text`, `status` (open/resolved), `uncertainty` (low/med/high), `created_at` | The unit of foraging. Everything is prioritized against open questions. |
 | **Source** | `id`, `doi`/`arxiv_id`/`openalex_id`, `title`, `authors`, `year`, `venue`, `urls[]`, `connector`, `retrieved_at`, `read_status` (unread/skimmed/read), `text_ref`, `text_status` (cached-full/abstract-only/uncachable), `extractor_version` | Deduplicated across connectors by DOI, then preprint↔published linking (OpenAlex relations), then blocked fuzzy title+year merge (candidate blocking, not O(n²)). Full text cached only from the curated OA host registry (§2.1); otherwise abstract only, and `text_status` says so. |
 | **Evidence** | `id`, `source_id`, `quote` (verbatim canonical text), `locator` (page/section/char-range), `content_hash` (sha256 of canonical quote), `verification` (verified-full-text / verified-abstract / unverified-locator), `extractor_version`, `retrieved_at`, `note` | A *pin*. The quote must **canonical-match** (§2.3) the cached text; when only the abstract is cached the pin is `verified-abstract`; with no cached text it is `unverified-locator`. Verification tier is carried into every brief and audit. |
-| **Claim** | `id`, `text`, `question_ids[]`, `links[] {evidence_id, stance}`, `confidence` (0–1, author-stated), `created_by` (human/agent id) | `stance ∈ {supports, contradicts, mentions}`. Status is **derived**, never hand-set: `supported` (≥1 supporting pin), `contested` (both supporting and contradicting pins across linked evidence), `unsupported` (no pins), `stale` (all pins older than a configurable window). In v0.1 confidence is author-stated and unvalidated — calibration measurement is explicitly deferred (§6.3). |
+| **Claim** | `id`, `text`, `question_ids[]`, `links[] {evidence_id, stance}`, `confidence` (0–1, author-stated), `created_by` (human/agent id) | `stance ∈ {supports, contradicts, mentions}`. Status is **derived**, never hand-set, and the rules are total: `contested` (≥1 contradicting pin), `supported` (≥1 supporting pin, none contradicting), `unsupported` (no supporting or contradicting pins — `mentions` links don't count), plus the `stale` overlay (all pins older than a configurable window). In v0.1 confidence is author-stated and unvalidated — calibration measurement is explicitly deferred (§6.3). |
 | **Ledger entry** | `ts`, `actor`, `action`, `entity`, `payload_hash`, `prev_hash` | Append-only JSONL, hash-chained: each entry commits to its predecessor, and `forage log --verify` checks the chain. Actor names are client-asserted; the ledger assumes a non-adversarial local machine — it is tamper-*evident* against accidental edits and honest-client confusion, not a defense against a hostile local process. |
 
 Notes integration: claims can be referenced from Markdown notes with anchors
@@ -36,8 +36,9 @@ never rewritten by the tool.
 
 ### 2.1 Source discovery
 - **Connectors (allowlist, MVP):** OpenAlex and arXiv (core); Crossref and
-  Semantic Scholar (fast-follow inside the same milestone — S2's usable rate
-  limits require an API key whose acquisition is a Phase 1 task).
+  Semantic Scholar (fast-follow — targeted within the same milestone but
+  allowed to slip behind it, because S2's usable rate limits require an API
+  key whose acquisition is a Phase 1 task).
   A connector implements `search(query) -> [SourceRecord]`,
   `lookup(id) -> SourceRecord`, `citations(id, direction) -> [SourceRecord]`.
   The base class enforces rate limits, retry/backoff, response caching, and an
@@ -47,8 +48,9 @@ never rewritten by the tool.
 - **Connector registration:** every connector declares a static API host list.
   At registration, hosts are validated against a curated scholarly-API registry
   shipped with foragekit; a connector whose hosts are not in the registry loads
-  only with an explicit per-workspace user override flag
-  (`--allow-unlisted-host`). This is enforceable for conforming plugins;
+  only with an explicit per-workspace user override
+  (`forage connectors enable NAME --allow-unlisted-host`). This is
+  enforceable for conforming plugins;
   arbitrary locally-installed Python can always do arbitrary things (§8 is
   honest about this).
 - **Full-text retrieval:** `fetch-text` retrieves and caches full text **only**
@@ -130,6 +132,13 @@ never rewritten by the tool.
   Coverage caveat: sources that don't resolve to OpenAlex fall back to string
   matching, which under- and over-merges on common names; the brief footnotes
   which method applied.
+- **Briefs are shareable artifacts (the adoption loop).** Compiled briefs are
+  self-contained Markdown: provenance footnotes inline, verification tiers
+  visible, readable with no workspace and no foragekit install. A one-line
+  attribution footer ("foraged with foragekit · N claims, every one pinned")
+  is on by default and removable (`--no-badge`, or `brief.badge = false` in
+  workspace config). The shared brief is the product's proof and its primary
+  distribution channel: every claim shows its receipts.
 - `audit` returns machine-readable findings: unsupported claims, single-source
   claims, contested pairs, stale evidence, unverified/degraded pins, orphaned
   pins.
@@ -180,6 +189,7 @@ never rewritten by the tool.
 forage init [--workspace DIR]
 forage ask "QUESTION" [--uncertainty low|med|high]
 forage questions [list|resolve QID]
+forage connectors [list|enable NAME [--allow-unlisted-host]]
 forage search "QUERY" [--connector NAME]... [--limit N]
 forage snowball SOURCE_ID [--direction back|fwd|both] [--depth N] [--budget N]
 forage sources [list|show ID] [--unread] [--question QID]
@@ -187,10 +197,10 @@ forage sources mark ID --status skimmed|read
 forage fetch-text SOURCE_ID                  # cache full text (OA registry only)
 forage text SOURCE_ID [--find "APPROX TEXT"] [--window START:CHARS]
 forage pin SOURCE_ID (--quote TEXT | --find "APPROX TEXT") --loc LOCATOR [--note TEXT]
-forage claim add "TEXT" --evidence EV_ID[:STANCE],... [--confidence F] [--question QID]
+forage claim add "TEXT" [--evidence EV_ID[:STANCE],...] [--confidence F] [--question QID]
 forage claim link CLAIM_ID --evidence EV_ID --stance supports|contradicts|mentions
 forage frontier [--question QID] [--top N] [--explain]
-forage brief QID [--format md|json] [--out FILE]
+forage brief QID [--format md|json] [--out FILE] [--no-badge]
 forage audit [--refetch] [--format text|json]
 forage status                     # workspace overview + patch-yield signal
 forage log [--since TS] [--actor A] [--verify]
@@ -208,6 +218,13 @@ The full loop — ask → search → snowball → fetch/read → pin → claim �
 audit — is closable by an MCP-only agent, including resuming an existing
 workspace in a fresh session. `export` is deliberately human-only.
 
+Friction is a design requirement: the server starts with `uvx foragekit serve
+--mcp` (zero install, zero config) and **auto-initializes a workspace on the
+first tool call** (in the current directory, or a configured path), so an
+agent's first useful result requires no human setup step. The repo ships
+[`agents/SKILL.md`](../agents/SKILL.md), a drop-in instruction file teaching
+any agent to run the loop well.
+
 | tool | purpose |
 |---|---|
 | `forage_ask(question, uncertainty?)` | register an open question |
@@ -222,13 +239,13 @@ workspace in a fresh session. `export` is deliberately human-only.
 | `forage_find_text(source_id, query)` | quote-snap: exact canonical spans + locators, pin-ready |
 | `forage_mark_read(source_id, status)` | skimmed / read |
 | `forage_pin_evidence(source_id, quote, locator, note?)` | pin (canonical-match verified) |
-| `forage_add_claim(text, evidence: [{evidence_id, stance}], confidence?, questions?)` | claim with explicit stances |
+| `forage_add_claim(text, evidence?: [{evidence_id, stance}], confidence?, questions?)` | claim with explicit stances; evidence optional (a no-evidence claim is born `unsupported`) |
 | `forage_link_evidence(claim_id, evidence_id, stance)` | attach later-found (incl. contradicting) evidence |
 | `forage_get_claim(claim_id)` / `forage_get_evidence(evidence_id)` | remediation lookups (e.g. after audit flags c7 ↔ c11) |
 | `forage_frontier(question_id?, top?)` | next-best reads with `why` strings and `patch_exhausted` signal |
 | `forage_status()` | workspace overview + per-patch marginal yield |
 | `forage_brief(question_id, format?, out_path?)` | with `out_path`: writes file, returns `{path, claim_counts_by_status, audit_summary}` instead of the full document |
-| `forage_audit()` | machine-readable findings |
+| `forage_audit(refetch?)` | machine-readable findings; `refetch` triggers best-effort upstream re-resolution (§2.3) |
 | `forage_log(since?, actor?, limit?)` | recent ledger entries — attribution self-check and post-compaction recovery |
 
 Design rules: tools return compact structured JSON with stable ids; list tools
@@ -273,18 +290,21 @@ give the harness the research question plus 2 seed papers; measure
 keyword-search-only baseline. Because non-CS reviews include studies reachable
 only via Embase/Scopus/hand-search, Phase 1 measures each benchmark's
 **connector-reachable ceiling**, and recall is reported as a fraction of
-reachable studies. Report queries-to-50%-coverage.
+reachable studies. Report queries-to-50%-coverage. **Gate:** foragekit's
+recall@budget beats the keyword-search-only baseline on the majority of
+benchmarks.
 
 ### 6.2 Evidence integrity *(gated)*
 (a) *Quote fidelity*: 100% of `verified-*` pins must canonical-match cached
 text — automated, a release gate. (b) *Citation-support rate*: ≥95% on an
 audited sample — does the pinned quote actually entail the claim? Scored by
 human annotation on a set pre-built from the team's own dogfooding pins during
-M3–M4 (not started in review week). No LLM judge in v0.1. (c) *Provenance
-completeness*: every claim in a compiled brief carries ≥1 pin by construction;
-the reported metric is the **share of pins per verification tier**
-(verified-full-text / verified-abstract / unverified-locator), because that
-share — not a vacuous 100% — is what tells a reader how solid a brief is.
+M4–M5 (not started in review week). No LLM judge in v0.1. (c) *Provenance
+completeness*: the share of claims in a compiled brief with ≥1 supporting pin
+(unsupported claims do appear in briefs, loudly flagged, so this is a real
+number — not a vacuous 100%), alongside the **share of pins per verification
+tier** (verified-full-text / verified-abstract / unverified-locator). Together
+these tell a reader how solid a brief is.
 
 ### 6.3 Calibration *(deferred post-v0.1)*
 Brier score / ECE of claim confidences requires adjudicated ground truth, and
@@ -296,8 +316,9 @@ and this metric family move to the post-v0.1 list together.
 ### 6.4 Foraging efficiency *(gated via proxy)*
 The reading-order study (new-pins-per-read under frontier vs. relevance vs.
 random ordering) uses a **scripted agent reader with a fixed pin budget** as
-the reader — decided and costed in Phase 2, with traces collected during M4–M5
-dogfooding, not in review week. Because that study is research-grade work, the
+the reader — decided and costed in Phase 2, with traces collected during M5
+dogfooding (the frontier scorer that generates orderings lands there), not in
+review week. Because that study is research-grade work, the
 v0.1 **gate** is a cheaper proxy: recall@budget of ground-truth included
 studies under frontier ordering must beat relevance-only ordering on the
 majority of §6.1 benchmarks. If it doesn't, frontier ships marked
@@ -312,6 +333,10 @@ wall-clock, tokens, and audit findings on the result.
 ## 7. Distribution & OSS posture
 
 - PyPI package `foragekit`, CLI entry point `forage`. Apache-2.0.
+- **Zero-friction agent entry:** `uvx foragekit serve --mcp` / `pipx run
+  foragekit` work with no prior install; the server is listed in MCP
+  registries and directories at launch, and `agents/SKILL.md` ships in-repo
+  as the copy-paste onboarding path for any agent framework.
 - `CONTRIBUTING.md`, code of conduct, issue/PR templates, `SECURITY.md`,
   good-first-issue labels from day one. Connectors are the designed
   first-contribution surface — community connectors must pass the conformance
