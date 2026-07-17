@@ -70,7 +70,9 @@ def main(argv: list[str] | None = None) -> int:
     s = sub.add_parser("claim", help="add or link claims")
     s.add_argument("action", choices=["add", "link"])
     s.add_argument("text_or_id")
-    s.add_argument("--evidence", help="EV_ID[:STANCE],... (default stance: supports)")
+    s.add_argument("--evidence", action="append", default=None,
+                   help="EV_ID[:STANCE],... — repeatable and/or comma-separated "
+                        "(default stance: supports)")
     s.add_argument("--stance", choices=["supports", "contradicts", "mentions"])
     s.add_argument("--confidence", type=float)
     s.add_argument("--question", action="append")
@@ -168,15 +170,19 @@ def _dispatch(args, ws: Workspace) -> int:
     elif args.cmd == "claim":
         if args.action == "add":
             evidence = []
-            for part in (args.evidence or "").split(","):
-                if not part:
-                    continue
-                ev_id, _, stance = part.partition(":")
-                evidence.append((ev_id, stance or "supports"))
+            for flag_value in (args.evidence or []):
+                for part in flag_value.split(","):
+                    if not part:
+                        continue
+                    ev_id, _, stance = part.partition(":")
+                    evidence.append((ev_id, stance or "supports"))
             c = ws.add_claim(args.text_or_id, evidence, args.confidence, args.question)
             _out(args, c, f"claim {c['id']} added (status: {c['status']})")
         else:
-            c = ws.link_evidence(args.text_or_id, args.evidence, args.stance or "supports")
+            if not args.evidence:
+                raise ValueError("claim link requires --evidence EV_ID")
+            c = ws.link_evidence(args.text_or_id, args.evidence[0].partition(":")[0],
+                                 args.stance or "supports")
             _out(args, c, f"claim {c['id']} now {c['status']}")
     elif args.cmd == "frontier":
         r = ws.frontier(args.question, args.top)
