@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "foragekit"
+version = "0.0.1"
+description = "Epistemic foraging for AI agents and researchers: source discovery, evidence pinning, uncertainty-aware briefs."
+readme = "README.md"
+license = { text = "Apache-2.0" }
+requires-python = ">=3.10"
+authors = [{ name = "foragekit contributors" }]
+keywords = ["literature-review", "agents", "mcp", "evidence", "research", "epistemic-foraging"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: Apache Software License",
+  "Programming Language :: Python :: 3",
+  "Topic :: Scientific/Engineering",
+]
+dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/IlkhamFY/epistemic-foraging"
+
+[project.scripts]
+forage = "foragekit.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["foragekit*"]
