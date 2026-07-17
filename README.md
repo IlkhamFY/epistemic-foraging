@@ -9,25 +9,29 @@
 
 ## Product thesis
 
-Agents and researchers doing literature review all fail the same way: discovery is a pile of one-shot keyword searches, "evidence" is a citation pasted from memory, and the final write-up presents every claim with the same unearned confidence. foragekit is a local-first workspace — a CLI, a Python library, and an MCP server — that makes the full evidence loop first-class: it discovers sources through scholarly APIs and citation snowballing, ranks the reading frontier by *expected information gain* against your open questions instead of raw relevance, pins every claim to verbatim, hash-stamped quotes with resolvable locators, and compiles briefs where each claim carries its support status (supported / contested / single-source / stale) and a calibrated confidence. Because it ships as MCP tools, any agent can forage instead of guess — and because every mutation lands in an append-only provenance ledger, a human can audit exactly where every sentence came from. Scope is deliberately narrow: literature review and knowledge synthesis, nothing else.
+Agents and researchers doing literature review all fail the same way: discovery is a pile of one-shot keyword searches, "evidence" is a citation pasted from memory, and the final write-up presents every claim with the same unearned confidence. foragekit is a local-first workspace — a CLI, a Python library, and an MCP server — that makes the full evidence loop first-class: it discovers sources through scholarly APIs and citation snowballing, ranks the reading frontier by *expected information gain* against your open questions instead of raw relevance, pins every claim to verbatim quotes with verified locators — labeled honestly by verification tier, down to abstract-only when full text can't be cached — and compiles briefs where each claim carries its derived support status (supported / contested / unsupported / stale) and an explicit author-stated confidence. Because it ships as MCP tools, any agent can forage instead of guess — and because every mutation lands in a hash-chained, append-only provenance ledger, a human can audit where every sentence came from. Scope is deliberately narrow: literature review and knowledge synthesis, nothing else.
 
 ## What it does
 
 - **Source discovery** — query allowlisted scholarly APIs (OpenAlex, Crossref, arXiv, Semantic Scholar), then *snowball*: walk citations forward and backward from what you've already found, with deduplication across connectors.
-- **Foraging, not just searching** — you register *open questions*; the `frontier` command ranks unread sources by expected information gain (relevance × novelty × citation centrality − reading cost) and tells you when a "patch" (a query or citation neighborhood) is exhausted and it's time to move on.
-- **Evidence tracking** — evidence is a verbatim quote + locator + retrieval timestamp + content hash, pinned to a cached copy of the source. Claims link to evidence with an explicit stance (supports / contradicts / mentions). No pin, no claim.
-- **Uncertainty-aware synthesis** — `brief` compiles your claims into a Markdown report where every claim is annotated with confidence, source count, source independence, and contestation. `audit` flags unsupported claims, single-source claims, contradicted claims, and stale or unresolvable evidence.
-- **Agent-native** — every capability is exposed as an MCP tool, so Claude, or any MCP-capable agent, can run the whole loop: ask → search → snowball → pin → claim → brief → audit.
-- **Local-first and auditable** — one workspace directory: SQLite store, Markdown notes you own, cached source text, and an append-only JSONL ledger recording every mutation (by whom — human or agent — and when).
+- **Foraging, not just searching** — you register *open questions*; the `frontier` command ranks unread sources by a weighted, explainable combination of relevance, novelty, and citation centrality, minus reading cost — and tells you when a "patch" (a query or citation neighborhood) is exhausted and it's time to move on.
+- **Evidence tracking** — evidence is a verbatim quote + locator + retrieval timestamp + content hash, verified against a locally cached copy of the source. Every pin carries an honest verification tier: full-text-verified, abstract-verified, or unverified-locator when no text could be cached (common for paywalled sources — briefs say so instead of hiding it). Claims link to evidence with an explicit stance (supports / contradicts / mentions). No pin, no claim.
+- **Uncertainty-aware synthesis** — `brief` compiles your claims into a Markdown report where every claim is annotated with confidence, source count, source independence, and contestation. `audit` flags unsupported claims, single-source claims, contested pairs, stale or degraded evidence, and orphaned pins.
+- **Agent-native** — the full loop is exposed as MCP tools, so Claude, or any MCP-capable agent, can run it end to end: ask → search → snowball → fetch → read → pin → claim → brief → audit, including resuming an existing workspace in a fresh session.
+- **Local-first and auditable** — one workspace directory: SQLite store, Markdown notes you own, cached source text, and a hash-chained, append-only JSONL ledger recording every mutation (by whom — human or agent — and when), verifiable with `forage log --verify`.
 
 ## What it will never do
 
-foragekit is for literature review and knowledge work, and the boundaries are enforced in the design, not just stated in the README:
+foragekit is for literature review and knowledge work only. Because "we won't build it" and "the design prevents it" are different strengths of claim, the boundaries are labeled honestly (full detail in [SPEC §8](docs/SPEC.md#8-non-goals-permanent)):
 
-- **No offensive-security tooling.** Not a recon or OSINT framework. Sources are documents, not people; there is no person-centric entity resolution and no dossier building.
+**Enforced by design:**
+- **No covert or generic data collection.** Connector hosts are validated against a curated scholarly-API registry; full-text fetching is restricted to a curated open-access registry — there is no generic-URL fetcher, no headless browser, no credentialed scraping, no proxy rotation. Every request sends an honest User-Agent with a contact address and respects rate limits and terms of service. (Locally installed code can always make its own network calls — the claim covers foragekit's surfaces and conforming plugins, and out-of-scope connectors won't be merged or listed.)
+- **No person-centric data model.** Sources are documents, not people: the connector contract exposes works and citations only — no author-entity endpoints, no persistent author graph, no dossier-building primitives.
+
+**Enforced by project policy:**
+- **No offensive-security or OSINT features.** Not a recon framework; no feature will be built to serve person-subject investigation.
 - **No biosafety workflows.** No lab-protocol planners, no wet-lab integrations. It reads and organizes literature; domain-specific hazard workflows are out of scope.
-- **No persuasion systems.** No audience targeting, message optimization, or A/B rhetoric features. Output is calibrated briefs for the person who asked, not content tuned to move someone else.
-- **No covert data collection.** Connectors are an allowlist of public scholarly APIs; there is no generic crawler, no headless browser, no login-walled scraping, no proxy rotation, and no plugin hook that could add them. Every request sends an honest User-Agent with a contact address and respects rate limits and terms of service.
+- **No persuasion systems.** No audience targeting, message optimization, or A/B rhetoric features. Briefs are for the person who asked, not content tuned to move someone else.
 
 ## Quick tour
 
@@ -47,11 +51,14 @@ $ forage frontier --question q1 --top 5
 1  0.87   Shuster et al. 2021 — Retrieval Augmentation Reduces...   high centrality, unread cluster
 2  0.81   ...
 
-$ forage pin src_4f2a --quote "hallucination rates dropped from 38% to 12%" --loc "§5.2, p.7"
-evidence ev_9c31 pinned (sha256:ab12…)
+$ forage fetch-text src_4f2a
+full text cached from arxiv.org (extractor v1)
+
+$ forage pin src_4f2a --find "hallucination rates dropped from 38 to 12" --loc "§5.2"
+snapped to exact span at §5.2 ¶3 · evidence ev_9c31 pinned (verified-full-text, sha256:ab12…)
 
 $ forage claim add "RAG reduces but does not eliminate hallucination" \
-    --evidence ev_9c31,ev_77d0 --confidence 0.8 --question q1
+    --evidence ev_9c31:supports,ev_77d0:supports --confidence 0.8 --question q1
 
 $ forage audit
 ✔ 14 claims supported   ⚠ 2 single-source   ✖ 1 contested (claims c7 ↔ c11)
