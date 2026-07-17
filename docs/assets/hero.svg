@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="780" height="460" viewBox="0 0 780 460" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">
+  <defs>
+    <clipPath id="frame"><rect x="10" y="10" width="760" height="440" rx="12"/></clipPath>
+  </defs>
+
+  <!-- terminal frame -->
+  <rect x="10" y="10" width="760" height="440" rx="12" fill="#0d1117" stroke="#30363d" stroke-width="1.5"/>
+  <g clip-path="url(#frame)">
+    <rect x="10" y="10" width="760" height="36" fill="#161b22"/>
+  </g>
+  <circle cx="34" cy="28" r="6" fill="#ff5f57"/>
+  <circle cx="54" cy="28" r="6" fill="#febc2e"/>
+  <circle cx="74" cy="28" r="6" fill="#28c840"/>
+  <text x="390" y="33" text-anchor="middle" font-size="13" fill="#8b949e">forage brief q1 — every claim shows its receipts</text>
+
+  <!-- prompt -->
+  <text x="34" y="74" font-size="14" fill="#7ee787">$</text>
+  <text x="50" y="74" font-size="14" fill="#e6edf3">forage brief q1</text>
+
+  <!-- question -->
+  <text x="34" y="106" font-size="15" font-weight="bold" fill="#e6edf3"># Do retrieval-augmented LLMs hallucinate less?</text>
+  <text x="34" y="126" font-size="12" fill="#8b949e">question q1 · open · uncertainty: high → medium</text>
+
+  <!-- supported claim -->
+  <rect x="34" y="142" width="92" height="20" rx="10" fill="#0f2e1c" stroke="#238636"/>
+  <text x="80" y="156" text-anchor="middle" font-size="11" fill="#3fb950">SUPPORTED</text>
+  <text x="136" y="157" font-size="13" fill="#e6edf3">RAG reduces but does not eliminate hallucination</text>
+  <text x="136" y="176" font-size="12" fill="#8b949e">confidence 0.80 (author-stated) · 3 independent sources</text>
+  <rect x="516" y="163" width="126" height="17" rx="8" fill="#10233d" stroke="#1f6feb"/>
+  <text x="579" y="176" text-anchor="middle" font-size="10.5" fill="#58a6ff">verified-abstract</text>
+
+  <!-- contested claim -->
+  <rect x="34" y="196" width="92" height="20" rx="10" fill="#341a00" stroke="#9e6a03"/>
+  <text x="80" y="210" text-anchor="middle" font-size="11" fill="#d29922">CONTESTED</text>
+  <text x="136" y="211" font-size="13" fill="#e6edf3">Retrieval fixes hallucination on long-tail facts</text>
+  <text x="136" y="230" font-size="12" fill="#8b949e">2 supporting / 1 contradicting — brief renders both sides</text>
+
+  <!-- unsupported claim -->
+  <rect x="34" y="250" width="104" height="20" rx="10" fill="#3d1418" stroke="#da3633"/>
+  <text x="86" y="264" text-anchor="middle" font-size="11" fill="#f85149">UNSUPPORTED</text>
+  <text x="148" y="265" font-size="13" fill="#8b949e" font-style="italic">"RAG solves hallucination" — no pinned evidence, flagged by audit</text>
+
+  <!-- evidence footnote -->
+  <line x1="34" y1="288" x2="746" y2="288" stroke="#21262d"/>
+  <text x="34" y="312" font-size="12" fill="#8b949e">[^1] "hallucination rates dropped from 38% to 12%"</text>
+  <text x="60" y="331" font-size="12" fill="#6e7681">— Shuster et al. (2021), §5.2 · pinned quote, canonical-match verified, sha256:ab12…</text>
+
+  <!-- foraging signal -->
+  <text x="34" y="366" font-size="12" fill="#d29922">patch signal:</text>
+  <text x="138" y="366" font-size="12" fill="#8b949e">0 new claims from last 4 reads — switching to unread citation cluster</text>
+
+  <!-- footer -->
+  <g clip-path="url(#frame)">
+    <rect x="10" y="386" width="760" height="64" fill="#161b22"/>
+  </g>
+  <text x="34" y="412" font-size="12" fill="#3fb950">✓ ledger: VERIFIED (hash chain intact)</text>
+  <text x="34" y="434" font-size="12" fill="#8b949e">17 claims · 24 pinned quotes · every mutation attributed · foraged with foragekit</text>
+</svg>
