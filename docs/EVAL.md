@@ -91,6 +91,26 @@ claims they can support. Treat this as *the first data point and the eval
 harness working end-to-end*, not a benchmark result; the real gates are
 specced in [SPEC §6](SPEC.md#6-evaluation-metrics).
 
+## Follow-up: the cold-agent test (server-taught, zero prompting)
+
+The original foragekit arm was *taught* — its prompt spelled out the loop in
+~400 words. After shipping the self-teaching change (loop instructions in the
+MCP handshake, a `next` hint on every tool/CLI response), we re-ran the
+harder version: a fresh agent, a **new question** (spaced repetition vs.
+massed practice), and a prompt that said only *"the machine has a research
+tool called `forage`"* — no loop description, no SKILL.md, no examples.
+
+Result: the cold agent ran the full designed loop unprompted —
+`ask → search → frontier → snowball → fetch-text → text → pin → claim →
+audit → brief` — produced 7 claims (5 supported, **2 contested with both
+sides pinned**), 15 verified pins across 69 discovered sources, fixed an
+audit finding before compiling, and left a 60-entry hash-verified ledger
+fully attributed to `agent:cold-test`. Wall-clock 8.8 min, ~76k tokens.
+
+The prompting cost of correct tool use dropped from ~400 words to zero. That
+was the point of making the server teach the agent; one run says it works,
+the same n=1 caveats apply.
+
 ## Artifacts
 
 - The foragekit arm's unedited output: [`examples/brief-rag-hallucination.md`](../examples/brief-rag-hallucination.md)
