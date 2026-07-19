@@ -26,8 +26,8 @@
   <text x="80" y="156" text-anchor="middle" font-size="11" fill="#3fb950">SUPPORTED</text>
   <text x="136" y="157" font-size="13" fill="#e6edf3">RAG reduces but does not eliminate hallucination</text>
   <text x="136" y="176" font-size="12" fill="#8b949e">confidence 0.80 (author-stated) · 3 independent sources</text>
-  <rect x="516" y="163" width="126" height="17" rx="8" fill="#10233d" stroke="#1f6feb"/>
-  <text x="579" y="176" text-anchor="middle" font-size="10.5" fill="#58a6ff">verified-abstract</text>
+  <rect x="618" y="163" width="126" height="17" rx="8" fill="#10233d" stroke="#1f6feb"/>
+  <text x="681" y="176" text-anchor="middle" font-size="10.5" fill="#58a6ff">verified-abstract</text>
 
   <!-- contested claim -->
   <rect x="34" y="196" width="92" height="20" rx="10" fill="#341a00" stroke="#9e6a03"/>
