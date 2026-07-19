@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "foragekit"
-version = "0.0.1"
+version = "0.0.2"
 description = "Epistemic foraging for AI agents and researchers: source discovery, evidence pinning, uncertainty-aware briefs."
 readme = "README.md"
 license = { text = "Apache-2.0" }
@@ -25,6 +25,7 @@ Homepage = "https://github.com/IlkhamFY/epistemic-foraging"
 
 [project.scripts]
 forage = "foragekit.cli:main"
+foragekit = "foragekit.cli:main"   # so `uvx foragekit serve --mcp` works as one word
 
 [tool.setuptools.packages.find]
 include = ["foragekit*"]

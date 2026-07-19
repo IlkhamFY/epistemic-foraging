@@ -13,7 +13,7 @@ import urllib.request
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field
 
-USER_AGENT = "foragekit/0.0.1 (+https://github.com/IlkhamFY/epistemic-foraging)"
+USER_AGENT = "foragekit/0.0.2 (+https://github.com/IlkhamFY/epistemic-foraging)"
 ALLOWED_HOSTS = {"api.openalex.org", "export.arxiv.org"}
 _MIN_INTERVAL = 0.35  # seconds between requests, per process
 _last_request = 0.0

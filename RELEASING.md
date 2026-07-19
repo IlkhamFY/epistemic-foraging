@@ -27,15 +27,37 @@ store or rotate.
 Manual fallback (if Actions is unavailable):
 `pip install build twine && python -m build && twine upload dist/*`
 
-## Distribution follow-ups (0.0.1 is published)
+## Distribution (state as of 0.0.2)
 
-Done: README + `.mcp.json` + `.cursor/mcp.json` lead with `uvx foragekit`.
+Done: README + `.mcp.json` + `.cursor/mcp.json` lead with `uvx foragekit`;
+the README carries the registry ownership marker
+(`mcp-name: io.github.ilkhamfy/foragekit`); `server.json` targets the
+2025-12-11 registry schema; 0.0.2 adds the `foragekit` console-script alias
+so `uvx foragekit serve --mcp` works as one word.
 
-Still open (no PyPI account action needed — these are submissions):
-- Submit `server.json` to the official MCP Registry (`mcp-publisher`), then
-  the syndication list: awesome-mcp-servers PR (research category), mcp.so,
-  Smithery, Glama.
-- Set up the Trusted Publishing pending-publisher (see above) so `v0.0.2`
-  onward publishes from a GitHub Release with no token.
+### MCP Registry — one click
+
+Actions tab → **mcp-registry** → *Run workflow*. It authenticates with
+GitHub OIDC (no tokens) and publishes `server.json`. Re-run after any
+version bump (keep `server.json` versions in sync with `pyproject.toml`).
+
+### awesome-mcp-servers — paste-ready PR line
+
+Fork `punkpeye/awesome-mcp-servers`, add under the research/search category
+(keep the list alphabetical), one-line entry:
+
+```
+- [IlkhamFY/epistemic-foraging](https://github.com/IlkhamFY/epistemic-foraging) 🐍 🏠 - Epistemic foraging for research agents: scholarly source discovery (OpenAlex/arXiv), machine-verified evidence pinning, uncertainty-aware briefs, hash-chained provenance ledger.
+```
+
+### Directories (web forms, ~2 min each)
+
+mcp.so, Smithery, Glama: submit the GitHub URL + the description above;
+install command `uvx foragekit serve --mcp`.
+
+### Ongoing
+
+- Set up the Trusted Publishing pending-publisher (top of this file) so
+  future versions publish from a GitHub Release with no token.
 - If the default branch is ever renamed, update the hero-image raw URL in
   README.md (it pins the current branch name so the image renders on PyPI).

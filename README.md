@@ -1,5 +1,7 @@
 # foragekit
 
+<!-- mcp-name: io.github.ilkhamfy/foragekit -->
+
 **Your agent can already search. foragekit makes it *forage*: hunt sources by expected information gain, pin every claim to a verified quote, and ship briefs that know how sure they are.**
 
 > *Literature review is quietly becoming agent work — and agents are fast, tireless, and unaccountable. They cite from memory and present every claim with the same unearned confidence. The fix isn't a smarter model; it's giving the model the discipline we ask of a good PhD student: receipts, stances, and an honest "I'm not sure yet."* — the maintainers, July 2026

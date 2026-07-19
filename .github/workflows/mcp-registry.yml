@@ -1,0 +1,21 @@
+name: mcp-registry
+# Publishes server.json to the official MCP Registry using GitHub OIDC -
+# no tokens or secrets. Trigger manually from the Actions tab after a PyPI
+# release whose README carries the mcp-name marker (0.0.2+).
+on:
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write   # OIDC proof of repo identity for io.github.ilkhamfy/*
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install mcp-publisher
+        run: |
+          curl -sSL "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_linux_amd64.tar.gz" \
+            | tar xz mcp-publisher
+      - run: ./mcp-publisher login github-oidc
+      - run: ./mcp-publisher publish
