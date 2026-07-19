@@ -6,7 +6,7 @@ instructions. The foragekit MCP server teaches the agent the foraging loop
 through its initialize handshake and per-tool `next` hints, so the system
 prompt only has to say what to produce, not how to research.
 
-    pip install claude-agent-sdk   # plus foragekit (pip install -e . from the repo)
+    pip install claude-agent-sdk foragekit
     python examples/foraging_agent.py "Does spaced repetition beat cramming?"
 """
 import asyncio

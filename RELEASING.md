@@ -1,8 +1,9 @@
 # Releasing foragekit
 
-The package is release-ready: `python -m build` and `twine check` both pass,
-and the `foragekit` name is unclaimed on PyPI (verified 2026-07). Publishing
-uses **PyPI Trusted Publishing** — no API tokens ever exist.
+**0.0.1 is live: https://pypi.org/project/foragekit/** (first release published
+manually with a scoped token). Subsequent releases should use **PyPI Trusted
+Publishing** via the GitHub Release flow below — no API tokens, nothing to
+store or rotate.
 
 ## One-time setup (~5 minutes, needs the PyPI account)
 
@@ -26,13 +27,15 @@ uses **PyPI Trusted Publishing** — no API tokens ever exist.
 Manual fallback (if Actions is unavailable):
 `pip install build twine && python -m build && twine upload dist/*`
 
-## After the first publish (unlocks distribution)
+## Distribution follow-ups (0.0.1 is published)
 
-- Flip the README install block to lead with `uvx foragekit serve --mcp` and
-  update `.mcp.json` / `.cursor/mcp.json` to use `uvx` instead of the local
-  `python3 -m foragekit.cli`.
+Done: README + `.mcp.json` + `.cursor/mcp.json` lead with `uvx foragekit`.
+
+Still open (no PyPI account action needed — these are submissions):
 - Submit `server.json` to the official MCP Registry (`mcp-publisher`), then
   the syndication list: awesome-mcp-servers PR (research category), mcp.so,
   Smithery, Glama.
+- Set up the Trusted Publishing pending-publisher (see above) so `v0.0.2`
+  onward publishes from a GitHub Release with no token.
 - If the default branch is ever renamed, update the hero-image raw URL in
   README.md (it pins the current branch name so the image renders on PyPI).

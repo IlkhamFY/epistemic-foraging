@@ -4,7 +4,7 @@
 
 > *Literature review is quietly becoming agent work — and agents are fast, tireless, and unaccountable. They cite from memory and present every claim with the same unearned confidence. The fix isn't a smarter model; it's giving the model the discipline we ask of a good PhD student: receipts, stances, and an honest "I'm not sure yet."* — the maintainers, July 2026
 
-**News** · **2026-07** working core + MCP server land: 21 tools, zero runtime dependencies · **2026-07** head-to-head agent evaluation published ([docs/EVAL.md](docs/EVAL.md)) · **2026-07** spec and plan hardened by a four-critic adversarial review
+**News** · **2026-07** [`foragekit` 0.0.1 on PyPI](https://pypi.org/project/foragekit/) — `uvx foragekit serve --mcp` · **2026-07** working core + MCP server: 21 tools, zero runtime dependencies · **2026-07** head-to-head agent evaluation published ([docs/EVAL.md](docs/EVAL.md)) · **2026-07** spec and plan hardened by a four-critic adversarial review
 
 ![A foragekit brief: claims with verification tiers, a contested claim showing both sides, an audit-flagged unsupported claim, and a verified provenance ledger](https://raw.githubusercontent.com/IlkhamFY/epistemic-foraging/claude/ai-agent-discovery-tool-6uikck/docs/assets/hero.svg)
 
@@ -12,14 +12,14 @@
 
 ## Get your agent foraging in 60 seconds
 
-Zero runtime dependencies — Python stdlib only. Not on PyPI yet; from a clone:
+Zero runtime dependencies — Python stdlib only. [On PyPI](https://pypi.org/project/foragekit/), so one line:
 
 ```console
-$ git clone https://github.com/IlkhamFY/epistemic-foraging && cd epistemic-foraging
-$ claude mcp add forage -- python3 -m foragekit.cli serve     # Claude Code, one line
+$ claude mcp add forage -- uvx foragekit serve --mcp     # Claude Code, zero install
+$ uvx foragekit serve --mcp                              # any other MCP client
 ```
 
-Or skip even that: the repo ships `.mcp.json` — open the clone in Claude Code or Cursor and the server is auto-detected. The workspace initializes itself on the first tool call. (Once the PyPI release lands: `uvx foragekit serve --mcp`.)
+Or open a clone in Claude Code or Cursor — the repo ships `.mcp.json` and the server is auto-detected. Either way the workspace initializes itself on the first tool call. Prefer pip? `pip install foragekit` gives you the `forage` CLI too.
 
 Then paste any of these at your agent:
 

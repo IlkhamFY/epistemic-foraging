@@ -1,8 +1,8 @@
 {
   "mcpServers": {
     "forage": {
-      "command": "python3",
-      "args": ["-m", "foragekit.cli", "serve"]
+      "command": "uvx",
+      "args": ["foragekit", "serve", "--mcp"]
     }
   }
 }
