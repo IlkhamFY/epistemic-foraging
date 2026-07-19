@@ -6,8 +6,11 @@ foragekit is a local-first toolkit (Python library + CLI + MCP server) for
 literature review and knowledge work. It gives AI agents and human researchers
 three capabilities that are usually improvised: **source discovery**,
 **evidence tracking**, and **uncertainty-aware note synthesis** — framed as
-*epistemic foraging*: spend your reading budget where it most reduces
-uncertainty about your open questions.
+[*epistemic foraging*](https://www.envisioning.com/vocab/epistemic-foraging):
+spend your reading budget where it most reduces uncertainty about your open
+questions. (The term comes from active inference and information-foraging
+research; see the README's "lineage" section for the threads foragekit
+implements.)
 
 This document specifies the MVP. Anything not listed under Core features is
 out of scope for v0.1 (see §8 for hard non-goals that are out of scope forever).

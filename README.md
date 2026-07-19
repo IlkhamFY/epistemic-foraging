@@ -8,7 +8,7 @@
 
 ![A foragekit brief: claims with verification tiers, a contested claim showing both sides, an audit-flagged unsupported claim, and a verified provenance ledger](https://raw.githubusercontent.com/IlkhamFY/epistemic-foraging/claude/ai-agent-discovery-tool-6uikck/docs/assets/hero.svg)
 
-[Spec](docs/SPEC.md) · [Plan](docs/PLAN.md) · [Agent skill](agents/SKILL.md) · [Example brief](examples/brief-rag-hallucination.md) · [Eval results](docs/EVAL.md)
+[Spec](docs/SPEC.md) · [Plan](docs/PLAN.md) · [Agent skill](agents/SKILL.md) · [Example brief](examples/brief-rag-hallucination.md) · [Eval results](docs/EVAL.md) · [What is epistemic foraging?](https://www.envisioning.com/vocab/epistemic-foraging)
 
 ## Get your agent foraging in 60 seconds
 
@@ -90,6 +90,14 @@ And `forage brief q1` compiles the artifact — see a real one, generated end-to
 | synthesis | `forage_brief` · `forage_audit` · `forage_log` |
 
 Nothing returns a whole paper in one call — text is windowed, lists paginate, briefs can write to disk and return a summary. And **the server teaches the agent**: the MCP handshake injects the foraging loop as server instructions, and every tool response ends with a one-line `next` hint — so a cold agent with zero prompting still forages instead of flailing. Full contracts in [SPEC §5.1](docs/SPEC.md#51-mcp-tools-the-agent-surface).
+
+## The idea's lineage
+
+"Epistemic foraging" isn't our coinage — it's [an established concept](https://www.envisioning.com/vocab/epistemic-foraging): *an agent's active search for information to reduce uncertainty about its environment*, rather than pursuing immediate reward. foragekit is a deliberately practical implementation of three research threads:
+
+- **Active inference / epistemic value** (Karl Friston et al.) — behavior decomposes into pragmatic (reward-seeking) and epistemic (uncertainty-reducing) action; the frontier score is a working approximation of epistemic value for reading.
+- **Information foraging theory** (Pirolli & Card) — humans hunt information the way animals hunt food, following "scent"; the frontier's `why` strings are scent made explicit.
+- **Optimal foraging / the marginal value theorem** (Charnov) — leave a patch when its marginal yield drops below what's available elsewhere; that is literally the `patch_exhausted` signal.
 
 ## Design choices
 
