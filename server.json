@@ -1,0 +1,25 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-07-09/server.schema.json",
+  "name": "io.github.ilkhamfy/foragekit",
+  "description": "Epistemic foraging for AI agents: scholarly source discovery, machine-verified evidence pinning, and uncertainty-aware research briefs with a hash-chained provenance ledger. Literature review and knowledge work only.",
+  "repository": {
+    "url": "https://github.com/IlkhamFY/epistemic-foraging",
+    "source": "github"
+  },
+  "version_detail": {
+    "version": "0.0.1"
+  },
+  "packages": [
+    {
+      "registry_name": "pypi",
+      "name": "foragekit",
+      "version": "0.0.1",
+      "runtime_hint": "uvx",
+      "transport_type": "stdio",
+      "package_arguments": [
+        { "type": "positional", "value": "serve" },
+        { "type": "positional", "value": "--mcp" }
+      ]
+    }
+  ]
+}
