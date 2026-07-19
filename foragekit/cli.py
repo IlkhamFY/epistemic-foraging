@@ -5,6 +5,7 @@ import argparse
 import json
 import sys
 
+from .hints import CLI_HINTS, audit_hint, frontier_hint
 from .workspace import Workspace
 
 
@@ -210,6 +211,7 @@ def _dispatch(args, ws: Workspace) -> int:
                 print("audit clean: every claim supported and verified")
             for f in r["findings"]:
                 print(f"[{f['kind']}] {f.get('claim') or f.get('evidence')}: {f['detail']}")
+            print("\n" + audit_hint(r["ok"]))
         return 0 if r["ok"] else 3
     elif args.cmd == "status":
         r = ws.status()
@@ -238,6 +240,11 @@ def _dispatch(args, ws: Workspace) -> int:
     elif args.cmd == "serve":
         from .mcp_server import serve
         serve(ws)
+    if not getattr(args, "json", False):
+        if args.cmd == "frontier":
+            print("\n" + frontier_hint(r.get("patch_exhausted", False)))
+        elif CLI_HINTS.get(args.cmd):
+            print("\n" + CLI_HINTS[args.cmd])
     return 0
 
 

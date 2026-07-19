@@ -89,7 +89,7 @@ And `forage brief q1` compiles the artifact — see a real one, generated end-to
 | evidence | `forage_pin_evidence` · `forage_add_claim` · `forage_link_evidence` · `forage_get_claim` · `forage_get_evidence` |
 | synthesis | `forage_brief` · `forage_audit` · `forage_log` |
 
-Nothing returns a whole paper in one call — text is windowed, lists paginate, briefs can write to disk and return a summary. Full contracts in [SPEC §5.1](docs/SPEC.md#51-mcp-tools-the-agent-surface).
+Nothing returns a whole paper in one call — text is windowed, lists paginate, briefs can write to disk and return a summary. And **the server teaches the agent**: the MCP handshake injects the foraging loop as server instructions, and every tool response ends with a one-line `next` hint — so a cold agent with zero prompting still forages instead of flailing. Full contracts in [SPEC §5.1](docs/SPEC.md#51-mcp-tools-the-agent-surface).
 
 ## Design choices
 

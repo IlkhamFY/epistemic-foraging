@@ -225,6 +225,15 @@ agent's first useful result requires no human setup step. The repo ships
 [`agents/SKILL.md`](../agents/SKILL.md), a drop-in instruction file teaching
 any agent to run the loop well.
 
+**The server teaches the agent.** A condensed version of the loop ships in
+the MCP `initialize` response's `instructions` field (clients inject it into
+the model's context automatically), and every tool response carries a
+one-line `next` hint (`forage_search` → "rank reads with forage_frontier";
+`forage_pin_evidence` → "cite this id in forage_add_claim"), so a cold agent
+follows the loop with zero prompting — and keeps following it after the
+handshake has scrolled out of attention. The CLI prints the same hints in
+human mode; `--json` output stays pure data.
+
 | tool | purpose |
 |---|---|
 | `forage_ask(question, uncertainty?)` | register an open question |

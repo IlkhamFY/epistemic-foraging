@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 import sys
 
+from .hints import INSTRUCTIONS, MCP_HINTS, audit_hint, frontier_hint
 from .workspace import Workspace
 
 PROTOCOL_VERSION = "2025-06-18"
@@ -145,6 +146,7 @@ def serve(ws: Workspace):  # pragma: no cover - exercised by integration test
                 "protocolVersion": msg.get("params", {}).get("protocolVersion", PROTOCOL_VERSION),
                 "capabilities": {"tools": {}},
                 "serverInfo": {"name": "foragekit", "version": "0.0.1"},
+                "instructions": INSTRUCTIONS,
             })
         elif method == "notifications/initialized":
             continue
@@ -155,7 +157,19 @@ def serve(ws: Workspace):  # pragma: no cover - exercised by integration test
         elif method == "tools/call":
             params = msg.get("params", {})
             try:
-                result = _call(ws, params.get("name", ""), params.get("arguments") or {})
+                name = params.get("name", "")
+                result = _call(ws, name, params.get("arguments") or {})
+                if name == "forage_frontier":
+                    hint = frontier_hint(result.get("patch_exhausted", False), mcp=True)
+                elif name == "forage_audit":
+                    hint = audit_hint(result.get("ok", False), mcp=True)
+                else:
+                    hint = MCP_HINTS.get(name)
+                if hint:
+                    if isinstance(result, dict):
+                        result = {**result, "next": hint}
+                    else:
+                        result = {"items": result, "next": hint}
                 reply(msg_id, {"content": [{"type": "text",
                                             "text": json.dumps(result, default=str)}],
                                "isError": False})
