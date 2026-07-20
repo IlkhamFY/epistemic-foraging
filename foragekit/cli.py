@@ -38,7 +38,7 @@ def main(argv: list[str] | None = None) -> int:
     s = sub.add_parser("search", help="search scholarly connectors")
     s.add_argument("query")
     s.add_argument("--connector", action="append", default=None,
-                   choices=["openalex", "arxiv"])
+                   choices=["openalex", "arxiv", "crossref"])
     s.add_argument("--limit", type=int, default=25)
 
     s = sub.add_parser("snowball", help="walk citations from a source")

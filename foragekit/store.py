@@ -8,6 +8,8 @@ import sqlite3
 import time
 from pathlib import Path
 
+from .canonical import norm_title
+
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS questions(
   id TEXT PRIMARY KEY, text TEXT NOT NULL, status TEXT DEFAULT 'open',
@@ -17,7 +19,7 @@ CREATE TABLE IF NOT EXISTS sources(
   title TEXT, authors TEXT, year INTEGER, venue TEXT, urls TEXT,
   connector TEXT, retrieved_at REAL, read_status TEXT DEFAULT 'unread',
   text_status TEXT DEFAULT 'none', abstract TEXT, text TEXT,
-  extractor_version TEXT, patch TEXT);
+  extractor_version TEXT, patch TEXT, norm_title TEXT);
 CREATE TABLE IF NOT EXISTS evidence(
   id TEXT PRIMARY KEY, source_id TEXT NOT NULL, quote TEXT NOT NULL,
   locator TEXT, content_hash TEXT, verification TEXT,
@@ -51,7 +53,24 @@ class Store:
         self.db.row_factory = sqlite3.Row
         self.db.execute("PRAGMA journal_mode=WAL")
         self.db.executescript(SCHEMA)
+        self._migrate()
         self.ledger_path = self.dir / "ledger.jsonl"
+
+    def _migrate(self):
+        """Additive migrations so pre-existing workspaces keep working."""
+        cols = {r["name"] for r in self.db.execute("PRAGMA table_info(sources)")}
+        if "norm_title" not in cols:
+            self.db.execute("ALTER TABLE sources ADD COLUMN norm_title TEXT")
+        # backfill the dedup-blocking column for rows created before it existed
+        rows = self.db.execute(
+            "SELECT id, title FROM sources WHERE norm_title IS NULL").fetchall()
+        for r in rows:
+            self.db.execute("UPDATE sources SET norm_title=? WHERE id=?",
+                            (norm_title(r["title"]), r["id"]))
+        self.db.execute(
+            "CREATE INDEX IF NOT EXISTS idx_sources_norm_title"
+            " ON sources(norm_title)")
+        self.db.commit()
 
     # -- ids ---------------------------------------------------------------
     def next_id(self, name: str, prefix: str) -> str:

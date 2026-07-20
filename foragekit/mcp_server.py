@@ -33,7 +33,7 @@ TOOLS = [
     _tool("forage_list_questions", "List questions with ids and status (start here when resuming).", {}, []),
     _tool("forage_update_question", "Resolve or re-grade a question.",
           {"question_id": _S, "status": _S, "uncertainty": _S, "note": _S}, ["question_id"]),
-    _tool("forage_search", "Search scholarly connectors (openalex, arxiv).",
+    _tool("forage_search", "Search scholarly connectors (openalex, arxiv, crossref).",
           {"query": _S, "connectors": {"type": "array", "items": _S}, "limit": _I}, ["query"]),
     _tool("forage_snowball", "Walk citations fwd/back from a source.",
           {"source_id": _S, "direction": {**_S, "enum": ["back", "fwd", "both"]}, "budget": _I},

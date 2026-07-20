@@ -1,6 +1,7 @@
 """The Workspace: every surface (CLI, MCP, Python) goes through here."""
 from __future__ import annotations
 
+import difflib
 import hashlib
 import json
 import time
@@ -9,8 +10,24 @@ from pathlib import Path
 
 from . import canonical, scoring, synthesis
 from .canonical import EXTRACTOR_VERSION
-from .connectors import CONNECTORS, SourceRecord
+from .connectors import CONNECTORS, SourceRecord, fetch_arxiv_html
 from .store import Store, default_actor
+
+# Blocked fuzzy dedup (preprint <-> published): candidates share the first
+# _BLOCK_CHARS chars of the normalized title; within a block a pair merges when
+# the full-title similarity beats _FUZZY_RATIO and the first author matches.
+_BLOCK_CHARS = 25
+_FUZZY_RATIO = 0.92
+
+
+def _first_author_lastname(authors: list[str]) -> str | None:
+    if not authors or not (authors[0] or "").strip():
+        return None
+    name = authors[0].strip()
+    if "," in name:  # "Lovelace, Ada" -> "Lovelace"
+        name = name.split(",", 1)[0].strip()
+    parts = name.split()
+    return parts[-1].lower() if parts else None
 
 
 class Workspace:
@@ -66,17 +83,51 @@ class Workspace:
             "SELECT id FROM sources WHERE id=?", (sid,)).fetchone()
         if existing:
             return sid, False
+        nt = canonical.norm_title(rec.title)
+        fuzzy = self._fuzzy_duplicate(nt, rec)
+        if fuzzy:
+            return fuzzy, False
         abstract = canonical.canonicalize(rec.abstract) if rec.abstract else None
         self.store.db.execute(
             "INSERT INTO sources(id, openalex_id, doi, arxiv_id, title, authors, year,"
             " venue, urls, connector, retrieved_at, text_status, abstract, text,"
-            " extractor_version, patch) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            " extractor_version, patch, norm_title) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
             (sid, rec.openalex_id, rec.doi, rec.arxiv_id, rec.title,
              json.dumps(rec.authors), rec.year, rec.venue, json.dumps(rec.urls),
              rec.connector, time.time(),
              "abstract-only" if abstract else "none",
-             abstract, abstract, EXTRACTOR_VERSION, patch))
+             abstract, abstract, EXTRACTOR_VERSION, patch, nt))
         return sid, True
+
+    def _fuzzy_duplicate(self, nt: str, rec: SourceRecord) -> str | None:
+        """Blocked fuzzy dedup for the preprint <-> published case.
+
+        Candidates come from an indexed prefix-range lookup on norm_title
+        (no O(n^2) scan); a candidate merges only when the full normalized
+        titles are near-identical AND the first-author last name matches.
+        """
+        block = nt[:_BLOCK_CHARS]
+        if not block:
+            return None
+        hi = block[:-1] + chr(ord(block[-1]) + 1)  # indexed prefix range
+        rows = self.store.db.execute(
+            "SELECT id, norm_title, authors FROM sources"
+            " WHERE norm_title >= ? AND norm_title < ?", (block, hi)).fetchall()
+        mine = _first_author_lastname(rec.authors)
+        if not mine:
+            return None
+        matcher = difflib.SequenceMatcher(autojunk=False)
+        matcher.set_seq2(nt)
+        for r in rows:
+            if not r["norm_title"]:
+                continue
+            matcher.set_seq1(r["norm_title"])
+            if matcher.ratio() <= _FUZZY_RATIO:
+                continue
+            theirs = _first_author_lastname(json.loads(r["authors"] or "[]"))
+            if theirs and theirs == mine:
+                return r["id"]
+        return None
 
     def search(self, query: str, connectors: list[str] | None = None,
                limit: int = 25) -> dict:
@@ -158,18 +209,47 @@ class Workspace:
         return d
 
     def fetch_text(self, source_id: str) -> dict:
-        """Walking skeleton: abstracts are the cached tier; full-text PDF
-        extraction lands with the M3 text pipeline."""
+        """Full-text tier (M3): cache the arXiv HTML render when the source
+        has an arxiv_id. Allowlist-only (arxiv.org) — no generic URL fetch;
+        everything else honestly stays at the abstract tier (SPEC §2.1)."""
         row = self.store.db.execute(
-            "SELECT text_status, abstract FROM sources WHERE id=?",
+            "SELECT text_status, abstract, arxiv_id FROM sources WHERE id=?",
             (source_id,)).fetchone()
         if not row:
             raise KeyError(f"no source {source_id}")
-        if row["abstract"]:
-            return {"source_id": source_id, "text_status": "abstract-only",
-                    "reason": "abstract cached; full-text extraction ships in M3 (SPEC §2.3)"}
-        return {"source_id": source_id, "text_status": "none",
-                "reason": "connector returned no abstract for this record"}
+        current = row["text_status"]
+        fallback = "abstract-only" if row["abstract"] else "none"
+        if current == "cached-full":
+            return {"source_id": source_id, "text_status": "cached-full",
+                    "reason": "full text already cached"}
+        if not row["arxiv_id"]:
+            if row["abstract"]:
+                return {"source_id": source_id, "text_status": "abstract-only",
+                        "reason": "no allowlisted full-text host for this source "
+                                  "(arXiv HTML is the only full-text tier); abstract cached"}
+            return {"source_id": source_id, "text_status": "none",
+                    "reason": "connector returned no abstract and source has no "
+                              "allowlisted full-text host"}
+        try:
+            full = fetch_arxiv_html(row["arxiv_id"])
+        except OSError as e:  # network/HTTP failure other than a clean 404
+            return {"source_id": source_id, "text_status": fallback,
+                    "reason": f"arXiv HTML fetch failed: {e}"}
+        if full is None:
+            return {"source_id": source_id, "text_status": fallback,
+                    "reason": "no HTML render upstream"}
+        text = canonical.canonicalize(full)
+        self.store.db.execute(
+            "UPDATE sources SET text=?, text_status='cached-full',"
+            " extractor_version=? WHERE id=?",
+            (text, EXTRACTOR_VERSION, source_id))
+        self.store.db.commit()
+        self._rec("fetch_text", source_id,
+                  {"text_status": "cached-full", "chars": len(text),
+                   "arxiv_id": row["arxiv_id"]})
+        return {"source_id": source_id, "text_status": "cached-full",
+                "reason": f"arXiv HTML render cached ({len(text)} chars)",
+                "text_chars": len(text)}
 
     def get_source_text(self, source_id: str, start: int = 0,
                         max_chars: int = 2000) -> dict:

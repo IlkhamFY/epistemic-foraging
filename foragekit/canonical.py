@@ -24,6 +24,11 @@ _QUOTES = {"‘": "'", "’": "'", "“": '"', "”": '"',
            "–": "-", "—": "-", " ": " ", "­": ""}
 
 
+def norm_title(title: str | None) -> str:
+    """Normalize a title for dedup blocking: letters+digits, lowercased."""
+    return "".join(c for c in (title or "").lower() if c.isalnum())
+
+
 def canonicalize(text: str) -> str:
     """Unicode NFC, ligature expansion, dehyphenation, whitespace folding."""
     text = unicodedata.normalize("NFC", text or "")
