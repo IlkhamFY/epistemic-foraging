@@ -65,7 +65,9 @@ TOOLS = [
     _tool("forage_status", "Workspace overview + patch-yield signal.", {}, []),
     _tool("forage_brief", "Compile the brief; with out_path returns only a summary.",
           {"question_id": _S, "out_path": _S, "badge": {"type": "boolean"}}, ["question_id"]),
-    _tool("forage_audit", "Machine-readable findings (unsupported/contested/degraded).", {}, []),
+    _tool("forage_audit", "Machine-readable findings (unsupported/contested/degraded).",
+          {"refetch": {"type": "boolean",
+                       "description": "also re-verify pins against re-fetched upstream text"}}, []),
     _tool("forage_log", "Recent ledger entries.", {"limit": _I, "verify": {"type": "boolean"}}, []),
 ]
 
@@ -114,7 +116,7 @@ def _call(ws: Workspace, name: str, a: dict):
         return ws.brief(a["question_id"], badge=a.get("badge", True),
                         out_path=a.get("out_path"))
     if name == "forage_audit":
-        return ws.audit()
+        return ws.audit(refetch=a.get("refetch", False))
     if name == "forage_log":
         return ws.log(a.get("limit", 20), a.get("verify", False))
     raise KeyError(f"unknown tool {name}")

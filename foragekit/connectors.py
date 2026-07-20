@@ -18,6 +18,17 @@ ALLOWED_HOSTS = {"api.openalex.org", "export.arxiv.org"}
 _MIN_INTERVAL = 0.35  # seconds between requests, per process
 _last_request = 0.0
 
+# Request accounting: the eval harness compares strategies at equal budgets.
+REQUEST_COUNT = {"n": 0}
+
+
+def reset_request_count() -> None:
+    REQUEST_COUNT["n"] = 0
+
+
+def request_count() -> int:
+    return REQUEST_COUNT["n"]
+
 
 def _get(url: str) -> bytes:
     global _last_request
@@ -32,6 +43,7 @@ def _get(url: str) -> bytes:
         try:
             with urllib.request.urlopen(req, timeout=30) as resp:
                 _last_request = time.time()
+                REQUEST_COUNT["n"] += 1
                 return resp.read()
         except Exception:
             if attempt == 2:
@@ -140,7 +152,16 @@ class Arxiv:
         url = ("https://export.arxiv.org/api/query?search_query="
                + urllib.parse.quote(f'all:"{query}"')
                + f"&max_results={min(limit, 50)}")
-        root = ET.fromstring(_get(url))
+        return self._parse_feed(_get(url))
+
+    def lookup(self, arxiv_id: str) -> SourceRecord | None:
+        url = ("https://export.arxiv.org/api/query?id_list="
+               + urllib.parse.quote(arxiv_id) + "&max_results=1")
+        recs = self._parse_feed(_get(url))
+        return recs[0] if recs else None
+
+    def _parse_feed(self, raw: bytes) -> list[SourceRecord]:
+        root = ET.fromstring(raw)
         out = []
         for e in root.findall(_ATOM + "entry"):
             aid = (e.findtext(_ATOM + "id") or "").rstrip("/").split("/abs/")[-1]

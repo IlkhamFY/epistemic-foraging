@@ -88,7 +88,9 @@ def main(argv: list[str] | None = None) -> int:
     s.add_argument("--out")
     s.add_argument("--no-badge", action="store_true")
 
-    sub.add_parser("audit", help="find unsupported/contested/degraded claims")
+    s = sub.add_parser("audit", help="find unsupported/contested/degraded claims")
+    s.add_argument("--refetch", action="store_true",
+                   help="also re-fetch pinned sources and re-verify upstream (best-effort)")
     sub.add_parser("status", help="workspace overview + patch signal")
 
     s = sub.add_parser("log", help="ledger entries")
@@ -203,7 +205,7 @@ def _dispatch(args, ws: Workspace) -> int:
         else:
             print(r["markdown"])
     elif args.cmd == "audit":
-        r = ws.audit()
+        r = ws.audit(refetch=args.refetch)
         if args.json:
             _out(args, r)
         else:

@@ -366,11 +366,54 @@ class Workspace:
             return {"path": out_path, "claim_counts_by_status": statuses}
         return {"markdown": md}
 
-    def audit(self) -> dict:
+    def audit(self, refetch: bool = False) -> dict:
         claims, links = self._claims_for(None)
         result = synthesis.audit(claims, links, self._evidence_by_id(), self._sources_by_id())
-        self._rec("audit", "workspace", {"counts": result["counts"]})
+        if refetch:
+            extra = self._refetch_findings()
+            result["findings"].extend(extra)
+            for f in extra:
+                result["counts"][f["kind"]] = result["counts"].get(f["kind"], 0) + 1
+            result["ok"] = not result["findings"]
+        self._rec("audit", "workspace", {"counts": result["counts"], "refetch": refetch})
         return result
+
+    def _refetch_findings(self) -> list[dict]:
+        """Best-effort upstream re-resolution (SPEC §2.3): re-fetch each pinned
+        source and re-verify its pins under canonicalization. This — not the
+        cheap local check — is what detects link rot and upstream drift."""
+        findings: list[dict] = []
+        rows = self.store.db.execute(
+            "SELECT DISTINCT sources.* FROM sources"
+            " JOIN evidence ON evidence.source_id = sources.id").fetchall()
+        for row in rows:
+            src = dict(row)
+            fresh = self._refetch_source_text(src)
+            if fresh is None:
+                findings.append({"kind": "refetch-unavailable", "source": src["id"],
+                                 "detail": "no upstream id, or upstream returned no text"})
+                continue
+            pins = self.store.db.execute(
+                "SELECT * FROM evidence WHERE source_id=?", (src["id"],)).fetchall()
+            for ev in pins:
+                if canonical.canonicalize(ev["quote"]).lower() not in fresh.lower():
+                    findings.append({"kind": "upstream-drift", "evidence": ev["id"],
+                                     "detail": f"pinned quote no longer found upstream ({src['id']})"})
+        return findings
+
+    def _refetch_source_text(self, src: dict) -> str | None:
+        try:
+            if src.get("openalex_id"):
+                recs = CONNECTORS["openalex"].lookup_many([src["openalex_id"]])
+                if recs and recs[0].abstract:
+                    return canonical.canonicalize(recs[0].abstract)
+            if src.get("arxiv_id"):
+                rec = CONNECTORS["arxiv"].lookup(src["arxiv_id"])
+                if rec and rec.abstract:
+                    return canonical.canonicalize(rec.abstract)
+        except Exception:
+            return None
+        return None
 
     def status(self) -> dict:
         counts = {t: self.store.db.execute(f"SELECT COUNT(*) FROM {t}").fetchone()[0]
