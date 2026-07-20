@@ -45,25 +45,45 @@ def discover_keyword(ws: Workspace, question: str, budget: int) -> None:
 
 def discover_forage(ws: Workspace, question: str, seed_ids: list[str],
                     budget: int) -> None:
-    """Foraging: two searches, then snowball the seeds both directions."""
+    """Foraging: two searches, snowball the seeds, then keep expanding from
+    the best-connected unexplored node until the request budget is spent —
+    iterative, citation-guided patch hopping rather than one fixed pass."""
     for q in query_variants(question)[:2]:
         if _under(budget):
             ws.search(q, ["openalex"], limit=50)
     if not _under(budget):
         return
     recs = connectors.CONNECTORS["openalex"].lookup_many(seed_ids)
-    sids = []
+    queue = []
     for rec in recs:
         sid, _ = ws._upsert(rec, patch="eval-seed")
-        sids.append(sid)
+        queue.append(sid)
     ws.store.db.commit()
-    for sid in sids:
-        if not _under(budget):
+    snowballed: set[str] = set()
+    while _under(budget):
+        sid = queue.pop(0) if queue else _next_hub(ws, snowballed)
+        if sid is None:
             return
+        if sid in snowballed:
+            continue
+        snowballed.add(sid)
         try:
             ws.snowball(sid, direction="both", budget=50)
         except Exception:
             continue
+
+
+def _next_hub(ws: Workspace, done: set[str]) -> str | None:
+    """Highest citation-degree source in the workspace not yet snowballed."""
+    rows = ws.store.db.execute(
+        "SELECT s.id AS sid, COUNT(*) AS deg FROM sources s"
+        " JOIN edges e ON e.src = s.id OR e.dst = s.id"
+        " WHERE s.openalex_id IS NOT NULL"
+        " GROUP BY s.id ORDER BY deg DESC").fetchall()
+    for r in rows:
+        if r["sid"] not in done:
+            return r["sid"]
+    return None
 
 
 def discovered_openalex_ids(ws: Workspace) -> set[str]:

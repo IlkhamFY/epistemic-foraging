@@ -25,7 +25,14 @@ def build(survey_id: str, name: str, question: str | None) -> dict:
     refs = sorted(set(survey.referenced))
     if len(refs) < 10:
         raise SystemExit(f"survey has only {len(refs)} references - pick a bigger one")
-    seeds, targets = refs[:2], refs[2:]
+    # Hydrate references to pick informative seeds: the two most recent ones
+    # sit in the survey's active citation neighborhood (the oldest, by
+    # contrast, are decades-old classics whose neighbors are off-topic).
+    hydrated = CONNECTORS["openalex"].lookup_many(refs)
+    by_recency = sorted(hydrated, key=lambda r: (r.year or 0, r.openalex_id or ""),
+                        reverse=True)
+    seeds = [r.openalex_id for r in by_recency[:2]]
+    targets = [r for r in refs if r not in seeds]
     return {
         "name": name,
         "question": question or f"What does the literature say about: {survey.title}?",
