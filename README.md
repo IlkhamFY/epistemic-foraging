@@ -106,10 +106,10 @@ Nothing returns a whole paper in one call — text is windowed, lists paginate, 
 - **Local-first, nothing else.** One workspace directory: SQLite + Markdown + JSONL. Delete it and nothing remains. No cloud, no telemetry, no account.
 - **Zero runtime dependencies.** Stdlib only — the MCP server is 300 lines of hand-rolled JSON-RPC. `pip install` cannot fail on a transitive pin.
 - **One explainable score, not a learned ranker.** Frontier weights are visible, configurable, and logged per ranking. You can argue with it, which is the point.
-- **Connectors are an allowlist, not a framework.** OpenAlex and arXiv today (Crossref and Semantic Scholar specced); static hosts, polite rate limits, honest User-Agent, zero API keys. There is no generic-URL fetcher, by design.
+- **Connectors are an allowlist, not a framework.** OpenAlex, arXiv, and Crossref today (Semantic Scholar specced); static hosts, polite rate limits, honest User-Agent, zero API keys. There is no generic-URL fetcher, by design — full text comes only from arXiv's own HTML renders.
 - **MCP over stdio only.** No network listener until an authenticated HTTP design earns its way in ([SPEC §5.3](docs/SPEC.md#53-http-api--deferred-post-v01)).
 
-**Status — honest edition:** this is a working walking skeleton. Evidence pins verify against cached *abstracts* (full-text PDF extraction is milestone M3); Crossref/Semantic Scholar connectors and confidence calibration are specced but unbuilt; PyPI release pending. The [plan](docs/PLAN.md) says what lands when.
+**Status — honest edition:** young but real. Evidence pins reach `verified-full-text` for papers with arXiv HTML renders (most post-2023 arXiv papers; 136K-char fetches work today) and `verified-abstract` elsewhere — PDF extraction is still open. The eval harness is live with first benchmark numbers ([docs/EVAL.md](docs/EVAL.md)): foraging found 25.0% of a survey's hidden references vs 0.9% for keyword search at equal budget. Semantic Scholar and confidence calibration remain unbuilt. The [plan](docs/PLAN.md) says what lands when.
 
 ## What it will never do
 

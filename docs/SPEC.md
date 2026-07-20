@@ -38,9 +38,8 @@ never rewritten by the tool.
 ## 2. Core features (v0.1)
 
 ### 2.1 Source discovery
-- **Connectors (allowlist, MVP):** OpenAlex and arXiv (core); Crossref and
-  Semantic Scholar (fast-follow — targeted within the same milestone but
-  allowed to slip behind it, because S2's usable rate limits require an API
+- **Connectors (allowlist, MVP):** OpenAlex, arXiv, and Crossref (live);
+  Semantic Scholar (fast-follow — S2's usable rate limits require an API
   key whose acquisition is a Phase 1 task).
   A connector implements `search(query) -> [SourceRecord]`,
   `lookup(id) -> SourceRecord`, `citations(id, direction) -> [SourceRecord]`.
