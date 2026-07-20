@@ -5,3 +5,4 @@ build/
 dist/
 .forage/
 .pytest_cache/
+.claude/
