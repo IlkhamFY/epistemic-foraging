@@ -147,7 +147,7 @@ def serve(ws: Workspace):  # pragma: no cover - exercised by integration test
             reply(msg_id, {
                 "protocolVersion": msg.get("params", {}).get("protocolVersion", PROTOCOL_VERSION),
                 "capabilities": {"tools": {}},
-                "serverInfo": {"name": "foragekit", "version": "0.0.2"},
+                "serverInfo": {"name": "foragekit", "version": "0.0.3"},
                 "instructions": INSTRUCTIONS,
             })
         elif method == "notifications/initialized":

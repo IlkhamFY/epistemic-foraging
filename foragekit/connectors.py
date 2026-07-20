@@ -18,7 +18,7 @@ from dataclasses import dataclass, field
 from html import unescape
 from html.parser import HTMLParser
 
-USER_AGENT = "foragekit/0.0.2 (+https://github.com/IlkhamFY/epistemic-foraging)"
+USER_AGENT = "foragekit/0.0.3 (+https://github.com/IlkhamFY/epistemic-foraging)"
 # Generic project contact for polite pools (Crossref mailto convention).
 CONTACT = "foragekit@users.noreply.github.com"
 ALLOWED_HOSTS = {"api.openalex.org", "export.arxiv.org", "arxiv.org",
