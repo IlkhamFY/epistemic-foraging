@@ -118,6 +118,9 @@ class OpenAlex:
     name = "openalex"
 
     def search(self, query: str, limit: int = 25) -> list[SourceRecord]:
+        # OpenAlex treats * and ? as wildcards and 400s on stemmed queries
+        # containing them - agents pass questions verbatim, so strip here.
+        query = query.replace("*", " ").replace("?", " ").strip()
         url = ("https://api.openalex.org/works?search=" + urllib.parse.quote(query)
                + f"&per-page={min(limit, 50)}&select={_OA_FIELDS}")
         data = json.loads(_get(url))
