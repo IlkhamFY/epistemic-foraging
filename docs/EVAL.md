@@ -111,6 +111,38 @@ The prompting cost of correct tool use dropped from ~400 words to zero. That
 was the point of making the server teach the agent; one run says it works,
 the same n=1 caveats apply.
 
+## The M-E harness lands: first seed-reconstruction numbers
+
+The reusable eval harness (`evals/`, PLAN milestone M-E) now implements SPEC
+§6.1 and §6.4: hide a survey's bibliography, start from the question plus two
+seed papers, measure recall of the hidden references at a fixed connector
+budget. First benchmark — Huang et al.'s LLM-hallucination survey, 212
+OpenAlex-resolvable references as ground truth, 25-request budget per arm:
+
+| | keyword search only | foraging (search + iterative snowball) |
+|---|---|---|
+| requests used | 3 (queries exhausted) | 26 |
+| sources discovered | 67 | 446 |
+| **hidden references found** | **2/212 (0.9%)** | **53/212 (25.0%)** |
+
+And the §6.4 ordering proxy — frontier vs. relevance-only ordering over the
+*same* discovered pool (53 targets present):
+
+| | recall@10 | recall@25 | first target at rank |
+|---|---|---|---|
+| frontier | **3.8%** | **11.3%** | **2** |
+| relevance-only | 1.9% | 5.7% | 8 |
+
+The frontier gate passes its first test: expected-information-gain ordering
+roughly doubles relevance ordering at both cutoffs. Caveats as ever: one
+benchmark, recency-picked seeds (favorable), a deliberately simple keyword
+baseline, and a 100%-reachable ceiling by construction. The harness also
+earned its keep on its first run by crashing: OpenAlex 400s on queries
+containing `?` (wildcard syntax), which would have hit any agent passing a
+research question verbatim — fixed at the connector layer the same day.
+
+Reproduce: `python -m evals.run_eval evals/datasets/llm-hallucination-survey.json --budget 25`
+
 ## Artifacts
 
 - The foragekit arm's unedited output: [`examples/brief-rag-hallucination.md`](../examples/brief-rag-hallucination.md)

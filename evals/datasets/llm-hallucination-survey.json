@@ -4,10 +4,12 @@
  "survey_openalex_id": "W4404534210",
  "survey_title": "A Survey on Hallucination in Large Language Models: Principles, Taxonomy, Challenges, and Open Questions",
  "seed_openalex_ids": [
-  "W1498990157",
-  "W2101105183"
+  "W4404783000",
+  "W4404782968"
  ],
  "target_openalex_ids": [
+  "W1498990157",
+  "W2101105183",
   "W2158874082",
   "W2489487449",
   "W2531563875",
@@ -217,8 +219,6 @@
   "W4404781368",
   "W4404781621",
   "W4404782801",
-  "W4404782968",
-  "W4404783000",
   "W89714523"
  ],
  "notes": "targets = survey references resolvable via OpenAlex, so the connector-reachable ceiling is 100% by construction; seeds are the first two references (sorted) and excluded from targets"
