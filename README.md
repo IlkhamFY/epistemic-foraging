@@ -1,6 +1,6 @@
 # foragekit
 
-<!-- mcp-name: io.github.ilkhamfy/foragekit -->
+<!-- mcp-name: io.github.IlkhamFY/foragekit -->
 
 **Your agent can already search. foragekit makes it *forage*: hunt sources by expected information gain, pin every claim to a verified quote, and ship briefs that know how sure they are.**
 
