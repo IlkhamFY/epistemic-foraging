@@ -6,6 +6,7 @@ on:
     types: [published]
   push:
     tags: ["v*"]
+  workflow_dispatch: {}   # manual publish of whatever version pyproject.toml carries
 
 jobs:
   build:
