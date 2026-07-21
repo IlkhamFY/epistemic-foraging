@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "foragekit"
-version = "0.0.3"
+version = "0.0.3.post1"
 description = "Epistemic foraging for AI agents and researchers: source discovery, evidence pinning, uncertainty-aware briefs."
 readme = "README.md"
 license = { text = "Apache-2.0" }

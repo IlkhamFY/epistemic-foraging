@@ -3,12 +3,12 @@
   "name": "io.github.IlkhamFY/foragekit",
   "title": "foragekit",
   "description": "Epistemic foraging for AI agents: source discovery, verified evidence, uncertainty-aware briefs",
-  "version": "0.0.3",
+  "version": "0.0.3.post1",
   "packages": [
     {
       "registryType": "pypi",
       "identifier": "foragekit",
-      "version": "0.0.3",
+      "version": "0.0.3.post1",
       "runtimeHint": "uvx",
       "packageArguments": [
         { "type": "positional", "value": "serve" },
