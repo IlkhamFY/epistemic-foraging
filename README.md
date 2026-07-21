@@ -8,7 +8,7 @@
 
 **News** · **2026-07** [`foragekit` 0.0.1 on PyPI](https://pypi.org/project/foragekit/) — `uvx foragekit serve --mcp` · **2026-07** working core + MCP server: 21 tools, zero runtime dependencies · **2026-07** head-to-head agent evaluation published ([docs/EVAL.md](docs/EVAL.md)) · **2026-07** spec and plan hardened by a four-critic adversarial review
 
-![A foragekit brief: claims with verification tiers, a contested claim showing both sides, an audit-flagged unsupported claim, and a verified provenance ledger](https://raw.githubusercontent.com/IlkhamFY/epistemic-foraging/claude/ai-agent-discovery-tool-6uikck/docs/assets/hero.svg)
+![A foragekit brief: claims with verification tiers, a contested claim showing both sides, an audit-flagged unsupported claim, and a verified provenance ledger](https://raw.githubusercontent.com/IlkhamFY/epistemic-foraging/main/docs/assets/hero.svg)
 
 [Spec](docs/SPEC.md) · [Plan](docs/PLAN.md) · [Agent skill](agents/SKILL.md) · [Example brief](examples/brief-rag-hallucination.md) · [Eval results](docs/EVAL.md) · [What is epistemic foraging?](https://www.envisioning.com/vocab/epistemic-foraging)
 
