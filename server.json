@@ -2,7 +2,7 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.ilkhamfy/foragekit",
   "title": "foragekit",
-  "description": "Epistemic foraging for AI agents: scholarly source discovery, machine-verified evidence pinning, and uncertainty-aware research briefs with a hash-chained provenance ledger. Literature review and knowledge work only.",
+  "description": "Epistemic foraging for AI agents: source discovery, verified evidence, uncertainty-aware briefs",
   "version": "0.0.3",
   "packages": [
     {
