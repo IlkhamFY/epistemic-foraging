@@ -37,6 +37,39 @@ def _cosine(a: dict[str, float], b: dict[str, float]) -> float:
     return dot / (na * nb) if na and nb else 0.0
 
 
+def _bm25(q_tokens: set[str], toks: list[str], df: Counter,
+          n_docs: int, avg_len: float, k1: float = 1.5, b: float = 0.75) -> float:
+    """Okapi BM25 over one document: sum over question terms t present in the
+    doc of IDF(t) * tf*(k1+1)/(tf + k1*(1-b+b*len/avg_len)), with
+    IDF(t) = ln((N+1)/(1+df_t)). Full derivation in docs/SCORING.md."""
+    if not toks:
+        return 0.0
+    tf = Counter(toks)
+    norm = k1 * (1 - b + b * len(toks) / avg_len)
+    return sum(
+        math.log((n_docs + 1) / (1 + df[t])) * (tf[t] * (k1 + 1)) / (tf[t] + norm)
+        for t in q_tokens if t in tf)
+
+
+def score_passages(question: str, passages: list[str]) -> list[float]:
+    """Library-mode relevance scorer for external RAG pipelines.
+
+    Scores each passage against `question` with BM25 (IDF computed over this
+    batch of passages) and normalizes to [0, 1] by the batch maximum, so the
+    result is directly usable as `scores = score_passages(q, retrieved_texts)`
+    inside your own writer/reviewer loop - no workspace, no network, no model
+    call, no context-window expansion. Deterministic and O(total tokens).
+    """
+    docs = [_tokens(p) for p in passages]
+    df = Counter(t for toks in docs for t in set(toks))
+    n = max(1, len(docs))
+    avg_len = sum(len(t) for t in docs) / n or 1.0
+    q_tokens = set(_tokens(question))
+    raw = [_bm25(q_tokens, toks, df, n, avg_len) for toks in docs]
+    mx = max(raw, default=0.0)
+    return [r / mx if mx else 0.0 for r in raw]
+
+
 def rank_frontier(question_text: str, sources: list[dict],
                   edges: list[tuple[str, str]], top: int = 10,
                   weights: dict | None = None) -> list[dict]:
@@ -48,21 +81,12 @@ def rank_frontier(question_text: str, sources: list[dict],
     n = max(1, len(docs))
     vecs = {sid: _tfidf(toks, df, n) for sid, toks in docs.items()}
 
-    # BM25-lite relevance: idf-weighted overlap with the question
+    # BM25 relevance: idf-weighted overlap with the question (see _bm25)
     q_tokens = set(_tokens(question_text))
     avg_len = sum(len(t) for t in docs.values()) / n or 1.0
 
     def relevance(sid: str) -> float:
-        toks = docs[sid]
-        if not toks:
-            return 0.0
-        tf = Counter(toks)
-        k1, b = 1.5, 0.75
-        norm = k1 * (1 - b + b * len(toks) / avg_len)
-        score = sum(
-            math.log((n + 1) / (1 + df[t])) * (tf[t] * (k1 + 1)) / (tf[t] + norm)
-            for t in q_tokens if t in tf)
-        return score
+        return _bm25(q_tokens, docs[sid], df, n, avg_len)
 
     # novelty: distance from centroid of read sources
     read_ids = [s["id"] for s in sources if s.get("read_status") in ("skimmed", "read")]

@@ -79,6 +79,19 @@ chain: VERIFIED - ledger intact
 
 And `forage brief q1` compiles the artifact — see a real one, generated end-to-end by an agent, in [`examples/brief-rag-hallucination.md`](examples/brief-rag-hallucination.md).
 
+## Or use it as a library (no MCP, no CLI, no network)
+
+Building your own RAG pipeline? The evidence discipline is importable as two deterministic primitives — a batch relevance scorer and a quote-verification gate — so your reviewer agent can score retrieved chunks without expanding any context window:
+
+```python
+from foragekit import score_passages, verify_quote
+
+scores = score_passages(question, retrieved_texts)   # BM25, [0,1] per chunk
+span = verify_quote(claim, chunk)                    # exact supporting span, or None
+```
+
+`None` is a binary "fail as evidence"; a `Span` is a pass with the receipt (exact text + char offsets) attached. Runnable writer/reviewer loop in [`examples/rag_reviewer.py`](examples/rag_reviewer.py); the exact scoring math is documented in [`docs/SCORING.md`](docs/SCORING.md).
+
 ## The MCP surface
 
 21 tools over stdio; every write is ledger-attributed to the calling agent. Grouped by loop stage:
