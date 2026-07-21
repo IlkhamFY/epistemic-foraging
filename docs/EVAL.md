@@ -111,37 +111,59 @@ The prompting cost of correct tool use dropped from ~400 words to zero. That
 was the point of making the server teach the agent; one run says it works,
 the same n=1 caveats apply.
 
-## The M-E harness lands: first seed-reconstruction numbers
+## Seed-reconstruction across three domains (the discovery benchmark)
 
-The reusable eval harness (`evals/`, PLAN milestone M-E) now implements SPEC
-§6.1 and §6.4: hide a survey's bibliography, start from the question plus two
-seed papers, measure recall of the hidden references at a fixed connector
-budget. First benchmark — Huang et al.'s LLM-hallucination survey, 212
-OpenAlex-resolvable references as ground truth, 25-request budget per arm:
+The reusable harness (`evals/`, PLAN milestone M-E) implements SPEC §6.1: hide a
+survey's bibliography, start from the question plus two seed papers, and measure
+how many of the hidden references each strategy recovers at a fixed connector
+budget. The connector-reachable ceiling is 100% by construction (targets are the
+OpenAlex-resolvable references), so these are recall fractions of an *achievable*
+maximum, not of the whole paper. Three surveys, three domains, same 25-request
+budget per strategy:
 
-| | keyword search only | foraging (search + iterative snowball) |
-|---|---|---|
-| requests used | 3 (queries exhausted) | 26 |
-| sources discovered | 67 | 446 |
-| **hidden references found** | **2/212 (0.9%)** | **53/212 (25.0%)** |
+| survey (domain) | targets | keyword search | foraging | gain |
+|---|---|---|---|---|
+| LLM autonomous agents | 58 | 1.7% | **82.8%** | **49×** |
+| ML for drug discovery | 157 | 1.9% | **15.9%** | **8×** |
+| LLM hallucination | 212 | 0.9% | 1.4% | 1.5× |
 
-And the §6.4 ordering proxy — frontier vs. relevance-only ordering over the
-*same* discovered pool (53 targets present):
+**Why keyword search is a flat line and foraging isn't.** The keyword baseline
+exhausts its query variants at ~6 requests — after that it has nothing left to
+do, so more budget buys it nothing. Foraging keeps walking the citation graph
+and converts budget into recall:
 
-| | recall@10 | recall@25 | first target at rank |
+| foraging budget | LLM agents | drug discovery | LLM hallucination |
 |---|---|---|---|
-| frontier | **3.8%** | **11.3%** | **2** |
-| relevance-only | 1.9% | 5.7% | 8 |
+| 25 requests | 82.8% | 15.9% | 1.4% |
+| 60 requests | 84.5% | 24.8% | 1.4% |
+| 120 requests | 84.5% | 28.0% | 1.4% |
 
-The frontier gate passes its first test: expected-information-gain ordering
-roughly doubles relevance ordering at both cutoffs. Caveats as ever: one
-benchmark, recency-picked seeds (favorable), a deliberately simple keyword
-baseline, and a 100%-reachable ceiling by construction. The harness also
-earned its keep on its first run by crashing: OpenAlex 400s on queries
-containing `?` (wildcard syntax), which would have hit any agent passing a
-research question verbatim — fixed at the connector layer the same day.
+**The honest hard case.** Foraging's reach depends on whether the seed papers'
+citation neighborhoods actually overlap the survey's bibliography. For the two
+favorable surveys they do, and recall is high. For the hallucination survey the
+two (recency-picked) seeds sit in a sub-cluster whose citation walks drift away
+from that survey's core references: at budget 120 foraging discovers 1,737
+sources but still lands on only ~1.4% of the specific hidden targets. Extra
+budget cannot fix a seed that starts in the wrong part of the graph — better
+seeding can. This reproduces, and it is why seed selection is an open work item.
+(An earlier one-off run of this survey reached 25% when the walk happened to
+snowball the survey hub itself; that outcome is high-variance, so we no longer
+quote it — the numbers above are what reproduces.)
 
-Reproduce: `python -m evals.run_eval evals/datasets/llm-hallucination-survey.json --budget 25`
+**Ordering (frontier vs. relevance) is not settled.** SPEC §6.4's proxy — does
+expected-information-gain ordering surface hidden targets earlier than
+relevance-only ordering over the same pool? — was favorable on the first survey
+but roughly ties on these two new domains (both reach the same recall@25;
+relevance-only occasionally ranks the first target slightly earlier). One
+dataset is not a trend; the frontier's *ordering* claim needs more domains before
+we stand behind it. Discovery *recall*, above, is the robust result.
+
+The harness earned its keep on its first run by crashing: OpenAlex 400s on
+queries containing `?` (wildcard syntax), which would have hit any agent passing
+a research question verbatim — fixed at the connector layer the same day.
+
+Reproduce: `python -m evals.run_eval evals/datasets/<name>.json --budget 25`
+(one survey) or `python -m evals.sweep` (all three, budget-swept).
 
 ## Artifacts
 

@@ -15,7 +15,7 @@ import pytest
 import foragekit.connectors as connectors
 from foragekit import Workspace, canonical
 from foragekit.canonical import EXTRACTOR_VERSION
-from foragekit.connectors import Crossref, SourceRecord
+from foragekit.connectors import Crossref, OpenAlex, SourceRecord
 
 # ---------------------------------------------------------------------------
 # fixtures & helpers
@@ -197,6 +197,29 @@ CROSSREF_JSON = json.dumps({"message": {"items": [
     {"DOI": "10.5555/minimal.item",
      "issued": {"date-parts": [[2019]]}},
 ]}}).encode()
+
+
+OPENALEX_JSON = json.dumps({"results": [
+    {"id": "https://openalex.org/W1",
+     "display_name": "A Survey on Retrieval-Augmented Generation",
+     "ids": {"doi": "https://doi.org/10.1/rag"},
+     "publication_year": 2024,
+     "authorships": [{"author": {"display_name": "Ada Lovelace"}}],
+     "referenced_works": ["https://openalex.org/W2"]},
+]}).encode()
+
+
+class TestOpenAlexPolitePool:
+    def test_all_endpoints_send_mailto(self, monkeypatch):
+        oa = OpenAlex()
+        calls = serve(monkeypatch, {"https://api.openalex.org/works?": OPENALEX_JSON})
+
+        oa.search("retrieval augmented generation", limit=5)
+        oa.lookup_many(["W1"])
+        oa.cited_by("W1", limit=5)
+
+        assert len(calls) == 3
+        assert all("mailto=" in c for c in calls)  # polite pool on every endpoint
 
 
 class TestCrossref:

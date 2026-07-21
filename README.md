@@ -122,7 +122,7 @@ Nothing returns a whole paper in one call — text is windowed, lists paginate, 
 - **Connectors are an allowlist, not a framework.** OpenAlex, arXiv, and Crossref today (Semantic Scholar specced); static hosts, polite rate limits, honest User-Agent, zero API keys. There is no generic-URL fetcher, by design — full text comes only from arXiv's own HTML renders.
 - **MCP over stdio only.** No network listener until an authenticated HTTP design earns its way in ([SPEC §5.3](docs/SPEC.md#53-http-api--deferred-post-v01)).
 
-**Status — honest edition:** young but real. Evidence pins reach `verified-full-text` for papers with arXiv HTML renders (most post-2023 arXiv papers; 136K-char fetches work today) and `verified-abstract` elsewhere — PDF extraction is still open. The eval harness is live with first benchmark numbers ([docs/EVAL.md](docs/EVAL.md)): foraging found 25.0% of a survey's hidden references vs 0.9% for keyword search at equal budget. Semantic Scholar and confidence calibration remain unbuilt. The [plan](docs/PLAN.md) says what lands when.
+**Status — honest edition:** young but real. Evidence pins reach `verified-full-text` for papers with arXiv HTML renders (most post-2023 arXiv papers; 136K-char fetches work today) and `verified-abstract` elsewhere — PDF extraction is still open. The eval harness is live with a three-domain benchmark ([docs/EVAL.md](docs/EVAL.md)): at equal budget, citation foraging recovered 8×–49× more of a survey's hidden references than keyword search on two of three surveys (with one honest hard case where seed placement leaves it near the baseline). Semantic Scholar and confidence calibration remain unbuilt. The [plan](docs/PLAN.md) says what lands when.
 
 ## What it will never do
 

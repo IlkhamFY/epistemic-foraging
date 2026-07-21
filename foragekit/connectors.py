@@ -127,6 +127,9 @@ def _oa_record(w: dict) -> SourceRecord:
 
 _OA_FIELDS = ("id,display_name,ids,publication_year,authorships,primary_location,"
               "abstract_inverted_index,referenced_works")
+# OpenAlex asks callers to identify themselves; doing so moves us into the
+# "polite pool" with higher, more stable rate limits. https://docs.openalex.org
+_OA_MAILTO = "&mailto=" + urllib.parse.quote(CONTACT)
 
 
 class OpenAlex:
@@ -137,7 +140,7 @@ class OpenAlex:
         # containing them - agents pass questions verbatim, so strip here.
         query = query.replace("*", " ").replace("?", " ").strip()
         url = ("https://api.openalex.org/works?search=" + urllib.parse.quote(query)
-               + f"&per-page={min(limit, 50)}&select={_OA_FIELDS}")
+               + f"&per-page={min(limit, 50)}&select={_OA_FIELDS}{_OA_MAILTO}")
         data = json.loads(_get(url))
         return [_oa_record(w) for w in data.get("results", [])]
 
@@ -146,14 +149,15 @@ class OpenAlex:
         for i in range(0, len(openalex_ids), 40):
             batch = "|".join(openalex_ids[i:i + 40])
             url = (f"https://api.openalex.org/works?filter=openalex_id:{batch}"
-                   f"&per-page=50&select={_OA_FIELDS}")
+                   f"&per-page=50&select={_OA_FIELDS}{_OA_MAILTO}")
             data = json.loads(_get(url))
             out.extend(_oa_record(w) for w in data.get("results", []))
         return out
 
     def cited_by(self, openalex_id: str, limit: int = 25) -> list[SourceRecord]:
         url = (f"https://api.openalex.org/works?filter=cites:{openalex_id}"
-               f"&per-page={min(limit, 50)}&sort=cited_by_count:desc&select={_OA_FIELDS}")
+               f"&per-page={min(limit, 50)}&sort=cited_by_count:desc"
+               f"&select={_OA_FIELDS}{_OA_MAILTO}")
         data = json.loads(_get(url))
         return [_oa_record(w) for w in data.get("results", [])]
 
