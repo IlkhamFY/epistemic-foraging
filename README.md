@@ -114,6 +114,8 @@ Nothing returns a whole paper in one call — text is windowed, lists paginate, 
 - **Information foraging theory** (Pirolli & Card) — humans hunt information the way animals hunt food, following "scent"; the frontier's `why` strings are scent made explicit.
 - **Optimal foraging / the marginal value theorem** (Charnov) — leave a patch when its marginal yield drops below what's available elsewhere; that is literally the `patch_exhausted` signal.
 
+For the applied-ML view of the same idea — uncertainty estimation, acquisition functions, exploration vs. exploitation — see [Alphanome's overview](https://www.alphanome.ai/post/epistemic-foraging-how-ai-actively-learns-by-seeking-knowledge); in that vocabulary, the frontier score is an acquisition function for reading.
+
 ## Design choices
 
 - **Local-first, nothing else.** One workspace directory: SQLite + Markdown + JSONL. Delete it and nothing remains. No cloud, no telemetry, no account.
